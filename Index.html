@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luma Client - Minecraft Bedrock Mod for Linux</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Archivo', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #fafafa;
+            color: #1a1a1a;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Header */
+        header {
+            padding: 24px 0;
+            border-bottom: 1px solid #e5e5e5;
+            background: white;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1a1a1a;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: #666;
+            text-decoration: none;
+            font-size: 15px;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: #1a1a1a;
+        }
+
+        /* Hero */
+        .hero {
+            padding: 120px 0 80px;
+            background: white;
+        }
+
+        h1 {
+            font-size: 56px;
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+        }
+
+        .hero p {
+            font-size: 20px;
+            color: #666;
+            max-width: 600px;
+            margin-bottom: 40px;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 15px;
+            transition: all 0.2s;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #1a1a1a;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #333;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #1a1a1a;
+            border: 1px solid #e5e5e5;
+        }
+
+        .btn-secondary:hover {
+            border-color: #1a1a1a;
+        }
+
+        /* Features */
+        .features {
+            padding: 80px 0;
+        }
+
+        .section-header {
+            margin-bottom: 48px;
+        }
+
+        .section-header h2 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .section-header p {
+            font-size: 18px;
+            color: #666;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 32px;
+        }
+
+        .feature {
+            padding: 32px;
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e5e5e5;
+        }
+
+        .feature h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .feature p {
+            color: #666;
+            font-size: 15px;
+        }
+
+        /* Installation */
+        .installation {
+            padding: 80px 0;
+            background: white;
+        }
+
+        .steps {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .step {
+            padding: 32px 0;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .step:last-child {
+            border-bottom: none;
+        }
+
+        .step-number {
+            font-size: 14px;
+            color: #999;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .step h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .step p {
+            color: #666;
+            margin-bottom: 16px;
+        }
+
+        .code-block {
+            background: #f5f5f5;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            border: 1px solid #e5e5e5;
+        }
+
+        /* Footer */
+        footer {
+            padding: 48px 0;
+            border-top: 1px solid #e5e5e5;
+            margin-top: 80px;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 24px;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 24px;
+            list-style: none;
+        }
+
+        .footer-links a {
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .footer-links a:hover {
+            color: #1a1a1a;
+        }
+
+        .copyright {
+            color: #999;
+            font-size: 14px;
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 40px;
+            }
+
+            .hero p {
+                font-size: 18px;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .section-header h2 {
+                font-size: 28px;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <nav>
+                <a href="#" class="logo">Luma Client</a>
+                <ul class="nav-links">
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#install">Install</a></li>
+                    <li><a href="https://github.com/sheep1fy/Luma-Client">GitHub</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <h1>Minecraft Bedrock<br>for Linux, enhanced</h1>
+            <p>A lightweight client mod that adds essential features like FPS counter, coordinates, CPS tracker, and more to Minecraft Bedrock Edition on Linux.</p>
+            <div class="buttons">
+                <a href="https://github.com/sheep1fy/Luma-Client/releases/latest" class="btn btn-primary">Download</a>
+                <a href="https://github.com/sheep1fy/Luma-Client" class="btn btn-secondary">View on GitHub</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-header">
+                <h2>Features</h2>
+                <p>Everything you need, nothing you don't</p>
+            </div>
+
+            <div class="feature-grid">
+                <div class="feature">
+                    <h3>FPS Counter</h3>
+                    <p>Monitor your framerate in real-time with a clean, unobtrusive display.</p>
+                </div>
+
+                <div class="feature">
+                    <h3>Coordinates</h3>
+                    <p>Always know your position with the built-in coordinate display.</p>
+                </div>
+
+                <div class="feature">
+                    <h3>CPS Tracker</h3>
+                    <p>Track your clicks per second - useful for PvP practice.</p>
+                </div>
+
+                <div class="feature">
+                    <h3>Ping Display</h3>
+                    <p>Keep an eye on your connection latency while playing.</p>
+                </div>
+
+                <div class="feature">
+                    <h3>Keystrokes</h3>
+                    <p>Show WASD inputs on screen - great for content creators.</p>
+                </div>
+
+                <div class="feature">
+                    <h3>AutoSprint</h3>
+                    <p>Automatically sprint when moving forward to save your pinky finger.</p>
+                </div>
+
+                <div class="feature">
+                    <h3>Zoom</h3>
+                    <p>Smooth camera zoom with adjustable FOV and keybind support.</p>
+                </div>
+
+                <div class="feature">
+                    <h3>HUD Editor</h3>
+                    <p>Drag and drop to position HUD elements exactly where you want them.</p>
+                </div>
+
+                <div class="feature">
+                    <h3>Config System</h3>
+                    <p>Save and load your settings - everything persists between sessions.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="installation" id="install">
+        <div class="container">
+            <div class="section-header">
+                <h2>Installation</h2>
+                <p>Get up and running in a few minutes</p>
+            </div>
+
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">Step 1</div>
+                    <h3>Install mcpelauncher</h3>
+                    <p>You'll need mcpelauncher to run Bedrock Edition on Linux. If you don't have it yet, check out their GitHub page.</p>
+                    <div class="code-block">https://github.com/minecraft-linux/mcpelauncher-manifest</div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">Step 2</div>
+                    <h3>Download Luma Client</h3>
+                    <p>Grab the latest release or build from source if you're feeling adventurous.</p>
+                    <div class="code-block">wget https://github.com/sheep1fy/Luma-Client/releases/latest/download/luma_client.so</div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">Step 3</div>
+                    <h3>Move to mods folder</h3>
+                    <p>Create the mods directory if it doesn't exist and copy the file.</p>
+                    <div class="code-block">mkdir -p ~/.local/share/mcpelauncher/mods<br>cp luma_client.so ~/.local/share/mcpelauncher/mods/</div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">Step 4</div>
+                    <h3>Launch and configure</h3>
+                    <p>Start Minecraft and press Right Shift + F3 to open the Luma Client menu. Enable the features you want and position the HUD elements.</p>
+                    <div class="code-block">mcpelauncher-client</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="copyright">© 2026 Luma Client</div>
+                <ul class="footer-links">
+                    <li><a href="https://github.com/sheep1fy/Luma-Client">GitHub</a></li>
+                    <li><a href="https://github.com/sheep1fy/Luma-Client/issues">Issues</a></li>
+                    <li><a href="https://github.com/sheep1fy/Luma-Client#readme">Docs</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
