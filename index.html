@@ -1,811 +1,953 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Luma Client</title>
-<meta name="description" content="A lightweight utility client for Minecraft Bedrock on Linux. Clean modules, zero bloat."/>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet"/>
-<style>
-/* ─── Reset & Tokens ─── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LUMA CLIENT — Minecraft Bedrock Enhanced</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #141414;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --accent: #00ff88;
+            --accent-dim: #00cc6a;
+            --minecraft-green: #55ff55;
+            --code-bg: #1a1a1a;
+        }
 
-:root {
-  --cyan:        #00ccff;
-  --cyan-dim:    #0099bf;
-  --cyan-glow:   rgba(0, 204, 255, .25);
-  --cyan-glow-sm:rgba(0, 204, 255, .12);
-  --bg:          #080a0d;
-  --bg-card:     rgba(14, 18, 24, .7);
-  --bg-card-hover: rgba(20, 26, 34, .85);
-  --border:      rgba(255,255,255,.06);
-  --border-hover:rgba(0, 204, 255, .25);
-  --text:        #e8eaed;
-  --text-dim:    rgba(232,234,237,.45);
-  --text-muted:  rgba(232,234,237,.25);
-  --font-head:   'Bebas Neue', sans-serif;
-  --font-body:   'DM Sans', sans-serif;
-  --radius:      14px;
-  --radius-sm:   8px;
-}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-html { scroll-behavior: smooth; }
+        html {
+            scroll-behavior: smooth;
+        }
 
-body {
-  font-family: var(--font-body);
-  background: var(--bg);
-  color: var(--text);
-  line-height: 1.6;
-  overflow-x: hidden;
-  -webkit-font-smoothing: antialiased;
-}
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            cursor: none;
+        }
 
-/* ─── Ambient Background ─── */
-.ambient {
-  position: fixed; inset: 0; z-index: 0;
-  pointer-events: none;
-}
-.ambient::before {
-  content: '';
-  position: absolute;
-  top: -30%; left: 50%; transform: translateX(-50%);
-  width: 900px; height: 900px;
-  background: radial-gradient(circle, rgba(0,204,255,.07) 0%, transparent 70%);
-  filter: blur(80px);
-  animation: drift 18s ease-in-out infinite alternate;
-}
-.ambient::after {
-  content: '';
-  position: absolute;
-  bottom: -20%; right: -10%;
-  width: 600px; height: 600px;
-  background: radial-gradient(circle, rgba(0,140,200,.05) 0%, transparent 70%);
-  filter: blur(60px);
-  animation: drift 24s ease-in-out infinite alternate-reverse;
-}
-@keyframes drift {
-  to { transform: translateX(-50%) translateY(60px); }
-}
+        /* Custom Cursor */
+        .cursor {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--accent);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transition: all 0.15s ease;
+            mix-blend-mode: difference;
+        }
 
-/* noise grain overlay */
-body::after {
-  content: '';
-  position: fixed; inset: 0; z-index: 999;
-  pointer-events: none;
-  opacity: .028;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: 200px 200px;
-}
+        .cursor-follower {
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transition: all 0.1s ease;
+        }
 
-/* ─── Nav ─── */
-nav {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 20px 40px;
-  background: rgba(8,10,13,.6);
-  backdrop-filter: blur(18px) saturate(1.2);
-  -webkit-backdrop-filter: blur(18px) saturate(1.2);
-  border-bottom: 1px solid var(--border);
-  transition: padding .3s ease, background .3s ease;
-}
-nav.scrolled {
-  padding: 14px 40px;
-  background: rgba(8,10,13,.82);
-}
-.nav-logo {
-  font-family: var(--font-head);
-  font-size: 1.45rem;
-  letter-spacing: .08em;
-  color: var(--cyan);
-  text-decoration: none;
-  display: flex; align-items: center; gap: 10px;
-}
-.nav-logo svg { width: 22px; height: 22px; }
-.nav-links { display: flex; gap: 32px; list-style: none; }
-.nav-links a {
-  color: var(--text-dim);
-  text-decoration: none;
-  font-size: .82rem;
-  font-weight: 400;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  transition: color .2s;
-  position: relative;
-}
-.nav-links a::after {
-  content: '';
-  position: absolute; bottom: -4px; left: 0;
-  width: 0; height: 1px;
-  background: var(--cyan);
-  transition: width .3s ease;
-}
-.nav-links a:hover { color: var(--cyan); }
-.nav-links a:hover::after { width: 100%; }
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 2rem 4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            background: rgba(10, 10, 10, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0, 255, 136, 0.1);
+        }
 
-.nav-cta {
-  background: var(--cyan);
-  color: #080a0d;
-  border: none;
-  padding: 8px 22px;
-  border-radius: 100px;
-  font-family: var(--font-body);
-  font-size: .78rem;
-  font-weight: 500;
-  letter-spacing: .07em;
-  text-transform: uppercase;
-  cursor: pointer;
-  text-decoration: none;
-  transition: box-shadow .25s, transform .15s;
-}
-.nav-cta:hover {
-  box-shadow: 0 0 18px var(--cyan-glow);
-  transform: translateY(-1px);
-}
+        .logo {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
 
-/* ─── Hero ─── */
-.hero {
-  position: relative; z-index: 1;
-  min-height: 100vh;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  text-align: center;
-  padding: 120px 24px 80px;
-}
+        .logo::before {
+            content: '▣';
+            color: var(--accent);
+            font-size: 1.8rem;
+        }
 
-.hero-badge {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: var(--cyan-glow-sm);
-  border: 1px solid var(--border-hover);
-  border-radius: 100px;
-  padding: 6px 16px;
-  font-size: .72rem;
-  color: var(--cyan);
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  margin-bottom: 36px;
-  animation: fadeUp .7s .1s both;
-}
-.hero-badge .dot {
-  width: 6px; height: 6px;
-  background: var(--cyan);
-  border-radius: 50%;
-  animation: pulse 2s infinite;
-}
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: .3; }
-}
+        .nav-links {
+            display: flex;
+            gap: 3rem;
+            list-style: none;
+        }
 
-.hero h1 {
-  font-family: var(--font-head);
-  font-size: clamp(3.8rem, 10vw, 7.2rem);
-  line-height: 1.0;
-  letter-spacing: -.01em;
-  color: #fff;
-  animation: fadeUp .7s .2s both;
-}
-.hero h1 .accent { color: var(--cyan); }
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: color 0.3s ease;
+            position: relative;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
 
-.hero-sub {
-  max-width: 480px;
-  font-size: 1rem;
-  color: var(--text-dim);
-  font-weight: 300;
-  margin-top: 24px;
-  animation: fadeUp .7s .35s both;
-}
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--accent);
+            transition: width 0.3s ease;
+        }
 
-.hero-actions {
-  margin-top: 44px;
-  display: flex; gap: 14px; flex-wrap: wrap;
-  justify-content: center;
-  animation: fadeUp .7s .5s both;
-}
+        .nav-links a:hover {
+            color: var(--accent);
+        }
 
-.btn-primary {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: var(--cyan);
-  color: #080a0d;
-  border: none;
-  padding: 14px 32px;
-  border-radius: 100px;
-  font-family: var(--font-body);
-  font-size: .85rem;
-  font-weight: 500;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  text-decoration: none;
-  cursor: pointer;
-  transition: box-shadow .25s, transform .15s;
-}
-.btn-primary:hover {
-  box-shadow: 0 0 28px var(--cyan-glow);
-  transform: translateY(-2px);
-}
-.btn-primary svg { width: 16px; height: 16px; }
+        .nav-links a:hover::after {
+            width: 100%;
+        }
 
-.btn-ghost {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: transparent;
-  color: var(--text-dim);
-  border: 1px solid var(--border);
-  padding: 14px 28px;
-  border-radius: 100px;
-  font-family: var(--font-body);
-  font-size: .85rem;
-  font-weight: 400;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  text-decoration: none;
-  cursor: pointer;
-  transition: border-color .25s, color .25s, transform .15s;
-}
-.btn-ghost:hover {
-  border-color: var(--border-hover);
-  color: var(--cyan);
-  transform: translateY(-2px);
-}
-.btn-ghost svg { width: 15px; height: 15px; }
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            padding: 0 4rem;
+        }
 
-/* scroll hint */
-.scroll-hint {
-  position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%);
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
-  color: var(--text-muted);
-  font-size: .65rem; letter-spacing: .15em; text-transform: uppercase;
-  animation: fadeUp .7s .8s both;
-}
-.scroll-hint .line {
-  width: 1px; height: 28px;
-  background: linear-gradient(to bottom, var(--cyan-dim), transparent);
-  animation: scrollBounce 2s ease-in-out infinite;
-}
-@keyframes scrollBounce {
-  0%, 100% { transform: scaleY(1); opacity: 1; }
-  50%      { transform: scaleY(.4); opacity: .3; }
-}
+        .hero-content {
+            text-align: center;
+            z-index: 2;
+            max-width: 1200px;
+        }
 
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(24px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+        .version-tag {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: fadeInUp 1s ease forwards 0.2s;
+        }
 
-/* ─── Section Shared ─── */
-section { position: relative; z-index: 1; }
-.section-inner { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+        .hero h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(3rem, 12vw, 9rem);
+            font-weight: 800;
+            line-height: 0.95;
+            letter-spacing: -0.02em;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: fadeInUp 1s ease forwards 0.4s;
+        }
 
-.section-label {
-  display: inline-flex; align-items: center; gap: 10px;
-  font-size: .7rem;
-  color: var(--cyan);
-  letter-spacing: .18em;
-  text-transform: uppercase;
-  margin-bottom: 14px;
-}
-.section-label::before {
-  content: '';
-  width: 28px; height: 1px;
-  background: var(--cyan);
-}
-.section-title {
-  font-family: var(--font-head);
-  font-size: clamp(2rem, 5vw, 3rem);
-  color: #fff;
-  letter-spacing: .02em;
-  line-height: 1.1;
-}
-.section-title .accent { color: var(--cyan); }
-.section-desc {
-  color: var(--text-dim);
-  font-size: .92rem;
-  font-weight: 300;
-  max-width: 520px;
-  margin-top: 14px;
-}
+        .hero h1 .gradient-text {
+            display: block;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--minecraft-green) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
 
-/* ─── Modules ─── */
-#modules { padding: 140px 0 100px; }
+        .hero .tagline {
+            font-size: clamp(1rem, 2vw, 1.3rem);
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto 3rem;
+            line-height: 1.6;
+            opacity: 0;
+            animation: fadeInUp 1s ease forwards 0.6s;
+        }
 
-.modules-header { text-align: center; margin-bottom: 70px; }
-.modules-header .section-label { justify-content: center; }
-.modules-header .section-desc { margin: 14px auto 0; }
+        .hero-buttons {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            opacity: 0;
+            animation: fadeInUp 1s ease forwards 0.8s;
+        }
 
-.modules-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-  gap: 16px;
-}
+        .btn-primary, .btn-secondary {
+            padding: 1.2rem 3rem;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.85rem;
+            letter-spacing: 0.05em;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            display: inline-block;
+        }
 
-.module-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 28px 26px;
-  position: relative;
-  overflow: hidden;
-  transition: border-color .3s, background .3s, transform .25s;
-  cursor: default;
-}
-.module-card::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--cyan-dim), transparent);
-  opacity: 0;
-  transition: opacity .4s;
-}
-.module-card:hover { 
-  border-color: var(--border-hover);
-  background: var(--bg-card-hover);
-  transform: translateY(-3px);
-}
-.module-card:hover::before { opacity: 1; }
+        .btn-primary {
+            background: var(--accent);
+            color: var(--bg-primary);
+            border: 2px solid var(--accent);
+        }
 
-.module-card-top {
-  display: flex; align-items: flex-start; justify-content: space-between;
-  margin-bottom: 14px;
-}
-.module-icon {
-  width: 38px; height: 38px;
-  background: var(--cyan-glow-sm);
-  border: 1px solid var(--border-hover);
-  border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  color: var(--cyan);
-  font-size: 1rem;
-}
-.module-tag {
-  font-size: .62rem;
-  color: var(--cyan-dim);
-  background: rgba(0,204,255,.08);
-  border: 1px solid rgba(0,204,255,.15);
-  padding: 3px 10px;
-  border-radius: 100px;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-}
-.module-card h3 {
-  font-family: var(--font-body);
-  font-size: .95rem;
-  font-weight: 500;
-  color: #fff;
-  margin-bottom: 6px;
-}
-.module-card p {
-  font-size: .78rem;
-  color: var(--text-dim);
-  font-weight: 300;
-  line-height: 1.55;
-}
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--minecraft-green);
+            transition: left 0.4s ease;
+            z-index: -1;
+        }
 
-/* ─── Features ─── */
-#features { padding: 100px 0 140px; }
+        .btn-primary:hover::before {
+            left: 0;
+        }
 
-.features-layout {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 80px;
-  align-items: center;
-}
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-primary);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
 
-.features-visual {
-  position: relative;
-  aspect-ratio: 4 / 3;
-  border-radius: 20px;
-  background: linear-gradient(135deg, rgba(14,18,24,.9), rgba(10,13,18,.95));
-  border: 1px solid var(--border);
-  overflow: hidden;
-  display: flex; align-items: center; justify-content: center;
-}
-/* animated wireframe grid inside the visual */
-.features-visual::before {
-  content: '';
-  position: absolute; inset: 0;
-  background-image:
-    linear-gradient(rgba(0,204,255,.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,204,255,.06) 1px, transparent 1px);
-  background-size: 44px 44px;
-  animation: gridSlide 20s linear infinite;
-}
-@keyframes gridSlide { to { background-position: 44px 44px; } }
+        .btn-secondary:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
 
-.features-visual .vis-inner {
-  position: relative; z-index: 1;
-  text-align: center;
-}
-.features-visual .vis-inner .big-icon {
-  font-size: 3.2rem;
-  margin-bottom: 12px;
-  display: block;
-  filter: drop-shadow(0 0 18px var(--cyan-glow));
-}
-.features-visual .vis-inner span {
-  font-family: var(--font-head);
-  font-size: 1.1rem;
-  letter-spacing: .2em;
-  color: var(--cyan);
-  text-transform: uppercase;
-}
+        /* Minecraft Grid Background */
+        .bg-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+            background-size: 32px 32px;
+            animation: gridMove 30s linear infinite;
+            opacity: 0.4;
+        }
 
-.features-list { list-style: none; }
-.features-list li {
-  display: flex; gap: 18px;
-  padding: 22px 0;
-  border-bottom: 1px solid var(--border);
-  transition: border-color .3s;
-}
-.features-list li:first-child { border-top: 1px solid var(--border); }
-.features-list li:hover { border-bottom-color: var(--border-hover); }
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(32px, 32px); }
+        }
 
-.feat-num {
-  font-family: var(--font-head);
-  font-size: 1.4rem;
-  color: var(--cyan);
-  opacity: .45;
-  min-width: 30px;
-  line-height: 1.2;
-}
-.feat-content h4 {
-  font-size: .9rem;
-  font-weight: 500;
-  color: #fff;
-  margin-bottom: 4px;
-}
-.feat-content p {
-  font-size: .78rem;
-  color: var(--text-dim);
-  font-weight: 300;
-}
+        .floating-blocks {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
 
-/* ─── Stats Bar ─── */
-#stats {
-  padding: 60px 0;
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-}
-.stats-row {
-  display: flex; justify-content: center; flex-wrap: wrap; gap: 60px;
-}
-.stat-item { text-align: center; }
-.stat-num {
-  font-family: var(--font-head);
-  font-size: 2.4rem;
-  color: var(--cyan);
-  line-height: 1;
-}
-.stat-label {
-  font-size: .7rem;
-  color: var(--text-muted);
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  margin-top: 6px;
-}
+        .block {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(85, 255, 85, 0.05));
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            animation: float 20s infinite ease-in-out;
+        }
 
-/* ─── CTA ─── */
-#cta { padding: 140px 0; }
-.cta-box {
-  background: linear-gradient(135deg, rgba(0,204,255,.06), rgba(0,140,200,.03));
-  border: 1px solid var(--border-hover);
-  border-radius: 24px;
-  padding: 80px 40px;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-}
-.cta-box::before {
-  content: '';
-  position: absolute; top: -50%; left: 50%; transform: translateX(-50%);
-  width: 600px; height: 600px;
-  background: radial-gradient(circle, rgba(0,204,255,.08), transparent 70%);
-  pointer-events: none;
-}
-.cta-box .section-label { justify-content: center; position: relative; }
-.cta-box .section-title { position: relative; }
-.cta-box .section-desc { margin: 14px auto 0; text-align: center; position: relative; }
-.cta-actions { margin-top: 42px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; position: relative; }
+        .block:nth-child(1) { left: 10%; top: 20%; animation-delay: 0s; }
+        .block:nth-child(2) { left: 80%; top: 30%; animation-delay: 2s; }
+        .block:nth-child(3) { left: 60%; top: 70%; animation-delay: 4s; }
+        .block:nth-child(4) { left: 20%; top: 60%; animation-delay: 6s; }
+        .block:nth-child(5) { left: 90%; top: 80%; animation-delay: 8s; }
 
-/* ─── Footer ─── */
-footer {
-  padding: 50px 0 36px;
-  border-top: 1px solid var(--border);
-}
-.footer-inner {
-  display: flex; justify-content: space-between; align-items: center;
-  flex-wrap: wrap; gap: 20px;
-}
-.footer-logo {
-  font-family: var(--font-head);
-  font-size: 1.05rem;
-  color: var(--cyan);
-  letter-spacing: .08em;
-  text-decoration: none;
-}
-.footer-links { display: flex; gap: 28px; list-style: none; }
-.footer-links a {
-  color: var(--text-muted);
-  text-decoration: none;
-  font-size: .75rem;
-  transition: color .2s;
-}
-.footer-links a:hover { color: var(--cyan); }
-.footer-copy {
-  font-size: .7rem;
-  color: var(--text-muted);
-}
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.3; }
+            50% { transform: translateY(-100px) rotate(180deg); opacity: 0.6; }
+        }
 
-/* ─── Responsive ─── */
-@media (max-width: 780px) {
-  nav { padding: 16px 22px; }
-  nav.scrolled { padding: 12px 22px; }
-  .nav-links { display: none; }
+        /* Features Section */
+        .features {
+            min-height: 100vh;
+            padding: 8rem 4rem;
+            background: var(--bg-secondary);
+            position: relative;
+        }
 
-  .features-layout { grid-template-columns: 1fr; gap: 48px; }
-  .features-visual { order: -1; }
+        .features h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+        }
 
-  .footer-inner { flex-direction: column; text-align: center; }
-}
+        .features .subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 5rem;
+            font-size: 1.1rem;
+        }
 
-/* ─── Scroll-reveal (JS-driven) ─── */
-.reveal {
-  opacity: 0;
-  transform: translateY(30px);
-  transition: opacity .65s ease, transform .65s ease;
-}
-.reveal.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-</style>
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: var(--bg-primary);
+            border: 1px solid rgba(0, 255, 136, 0.1);
+            padding: 3rem;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent);
+        }
+
+        .feature-card:hover::before {
+            left: 100%;
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            display: block;
+        }
+
+        .feature-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--accent);
+        }
+
+        .feature-description {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        /* Tech Stack Section */
+        .tech {
+            padding: 8rem 4rem;
+            background: var(--bg-primary);
+        }
+
+        .tech h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 4rem;
+            letter-spacing: -0.02em;
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 3rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .tech-item {
+            text-align: center;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .tech-item:hover {
+            border-color: rgba(0, 255, 136, 0.3);
+            transform: translateY(-5px);
+        }
+
+        .tech-name {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--accent);
+        }
+
+        .tech-desc {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Installation Section */
+        .installation {
+            padding: 8rem 4rem;
+            background: var(--bg-secondary);
+        }
+
+        .installation h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 4rem;
+            letter-spacing: -0.02em;
+        }
+
+        .install-steps {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .step {
+            background: var(--bg-primary);
+            border-left: 3px solid var(--accent);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .step-number {
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            background: var(--accent);
+            color: var(--bg-primary);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .step h3 {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            margin-top: 1rem;
+        }
+
+        .step p {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-bottom: 1rem;
+        }
+
+        .code-block {
+            background: var(--code-bg);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            padding: 1.5rem;
+            margin-top: 1rem;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .code-block code {
+            color: var(--minecraft-green);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .code-label {
+            position: absolute;
+            top: -10px;
+            right: 15px;
+            background: var(--accent);
+            color: var(--bg-primary);
+            padding: 0.3rem 0.8rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+        }
+
+        /* Download Section */
+        .download {
+            padding: 8rem 4rem;
+            text-align: center;
+            background: var(--bg-primary);
+        }
+
+        .download-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .download h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(3rem, 8vw, 7rem);
+            font-weight: 800;
+            margin-bottom: 2rem;
+            line-height: 1;
+            letter-spacing: -0.02em;
+        }
+
+        .download p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            line-height: 1.6;
+        }
+
+        .download-buttons {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .platform-badge {
+            display: inline-block;
+            padding: 0.5rem 1.5rem;
+            background: rgba(0, 255, 136, 0.05);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            margin: 0 0.5rem;
+            letter-spacing: 0.1em;
+        }
+
+        /* Footer */
+        footer {
+            padding: 3rem 4rem;
+            border-top: 1px solid rgba(0, 255, 136, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--accent);
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 0.8s ease;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            nav {
+                padding: 1.5rem 2rem;
+            }
+
+            .nav-links {
+                gap: 1.5rem;
+            }
+
+            .features-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            nav {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem 2rem;
+            }
+
+            .hero, .features, .tech, .installation, .download {
+                padding: 4rem 2rem;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .download-buttons {
+                flex-direction: column;
+            }
+
+            footer {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            body {
+                cursor: auto;
+            }
+
+            .cursor, .cursor-follower {
+                display: none;
+            }
+        }
+    </style>
 </head>
 <body>
+    <!-- Custom Cursor -->
+    <div class="cursor"></div>
+    <div class="cursor-follower"></div>
 
-<!-- Ambient glow layer -->
-<div class="ambient"></div>
-
-<!-- ─── Nav ─── -->
-<nav id="nav">
-  <a href="#" class="nav-logo">
-    <svg viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M11 2L2 7v10l9 5 9-5V7L11 2z" stroke="#00ccff" stroke-width="1.4" fill="none" stroke-linejoin="round"/>
-      <path d="M11 2v18M2 7l9 5 9-5" stroke="#00ccff" stroke-width="1" fill="none" stroke-linejoin="round" opacity=".5"/>
-    </svg>
-    LUMA
-  </a>
-  <ul class="nav-links">
-    <li><a href="#modules">Modules</a></li>
-    <li><a href="#features">Features</a></li>
-    <li><a href="#cta">Download</a></li>
-  </ul>
-  <a href="#cta" class="nav-cta">Download</a>
-</nav>
-
-<!-- ─── Hero ─── -->
-<section class="hero">
-  <div class="hero-badge"><span class="dot"></span> v1.0.1 — mcpelauncher Linux</div>
-  <h1>Play<br/><span class="accent">Without Limits</span></h1>
-  <p class="hero-sub">A lightweight utility client for Minecraft Bedrock on Linux. Clean modules, zero bloat — built for mcpelauncher.</p>
-  <div class="hero-actions">
-    <a href="#cta" class="btn-primary">
-      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1v10M8 11l-3-3m3 3l3-3M3 14h10" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
-      Download Now
-    </a>
-    <a href="https://github.com/sheep1fy/Luma-Client" target="_blank" rel="noopener" class="btn-ghost">
-      <svg viewBox="0 0 15 15" fill="currentColor"><path d="M7.5 0C3.36 0 0 3.36 0 7.5c0 3.33 2.163 6.16 5.16 7.16.378.07.49-.163.49-.36v-1.25C4.07 13.79 3.68 12.72 3.68 12.72c-.3-.77-.73-.97-.73-.97-.6-.4.045-.4.045-.4.66.046 1.008.678 1.008.678.585.998 1.536.71 1.91.544.06-.42.23-.71.417-.873-1.454-.165-2.98-.726-2.98-3.24 0-.803.27-1.458.71-1.973-.07-.174-.305-.935.07-1.947 0 0 .58-.186 1.9.71.55-.153 1.14-.23 1.73-.23s1.18.077 1.73.23c1.32-.896 1.9-.71 1.9-.71.375 1.012.14 1.773.07 1.947.44.515.71 1.17.71 1.973 0 2.52-1.528 3.073-2.985 3.24.234.2.45.6.45 1.21v1.8c0 .2.11.43.495.355C12.84 13.657 15 10.83 15 7.5 15 3.36 11.64 0 7.5 0z"/></svg>
-      GitHub
-    </a>
-  </div>
-  <div class="scroll-hint">
-    <div class="line"></div>
-    Scroll
-  </div>
-</section>
-
-<!-- ─── Stats ─── -->
-<section id="stats">
-  <div class="section-inner">
-    <div class="stats-row">
-      <div class="stat-item">
-        <div class="stat-num">7</div>
-        <div class="stat-label">Modules</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-num">0</div>
-        <div class="stat-label">Bloat</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-num">1</div>
-        <div class="stat-label">Key Press</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-num">C++17</div>
-        <div class="stat-label">Built With</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ─── Modules ─── -->
-<section id="modules">
-  <div class="section-inner">
-    <div class="modules-header reveal">
-      <div class="section-label">What's Inside</div>
-      <h2 class="section-title">Powerful <span class="accent">Modules</span></h2>
-      <p class="section-desc">Every module is purpose-built. Toggle what you need, hide what you don't — press K in-game to access.</p>
-    </div>
-
-    <div class="modules-grid">
-      <div class="module-card reveal">
-        <div class="module-card-top">
-          <div class="module-icon">⌚</div>
-          <span class="module-tag">Visual</span>
-        </div>
-        <h3>FPS Display</h3>
-        <p>Real-time framerate counter with built-in smoothing so you always see an accurate reading.</p>
-      </div>
-      <div class="module-card reveal">
-        <div class="module-card-top">
-          <div class="module-icon">🖱</div>
-          <span class="module-tag">Visual</span>
-        </div>
-        <h3>CPS Counter</h3>
-        <p>Tracks left and right clicks per second independently — useful for PvP and combo analysis.</p>
-      </div>
-      <div class="module-card reveal">
-        <div class="module-card-top">
-          <div class="module-icon">⌨</div>
-          <span class="module-tag">Visual</span>
-        </div>
-        <h3>Keystrokes</h3>
-        <p>On-screen display for WASD and mouse inputs. Great for streaming or reviewing your movement.</p>
-      </div>
-      <div class="module-card reveal">
-        <div class="module-card-top">
-          <div class="module-icon">📍</div>
-          <span class="module-tag">Visual</span>
-        </div>
-        <h3>Coordinates</h3>
-        <p>Live world position overlay showing X, Y, Z — never get lost again.</p>
-      </div>
-      <div class="module-card reveal">
-        <div class="module-card-top">
-          <div class="module-icon">📡</div>
-          <span class="module-tag">Network</span>
-        </div>
-        <h3>Ping Display</h3>
-        <p>Shows your current network latency in milliseconds so you can monitor connection quality.</p>
-      </div>
-      <div class="module-card reveal">
-        <div class="module-card-top">
-          <div class="module-icon">🔭</div>
-          <span class="module-tag">Utility</span>
-        </div>
-        <h3>Zoom</h3>
-        <p>Adjustable field-of-view zoom. Smooth, responsive, and fully configurable.</p>
-      </div>
-      <div class="module-card reveal">
-        <div class="module-card-top">
-          <div class="module-icon">🏃</div>
-          <span class="module-tag">Movement</span>
-        </div>
-        <h3>AutoSprint</h3>
-        <p>Stay in sprint without holding the key. Saves your fingers during long sessions.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ─── Features ─── -->
-<section id="features">
-  <div class="section-inner">
-    <div class="features-layout">
-      <div class="features-visual reveal">
-        <div class="vis-inner">
-          <span class="big-icon">◇</span>
-          <span>Luma Engine</span>
-        </div>
-      </div>
-      <div class="reveal">
-        <div class="section-label">Why Luma</div>
-        <h2 class="section-title">Designed for<br/><span class="accent">Linux Players</span></h2>
-        <p class="section-desc">Most Bedrock clients ignore Linux entirely. Luma is built from the ground up for mcpelauncher — native, fast, no Wine required.</p>
-        <ul class="features-list">
-          <li>
-            <span class="feat-num">01</span>
-            <div class="feat-content">
-              <h4>Native Linux Support</h4>
-              <p>Runs directly inside mcpelauncher with no compatibility layers or overhead.</p>
-            </div>
-          </li>
-          <li>
-            <span class="feat-num">02</span>
-            <div class="feat-content">
-              <h4>Glassmorphism UI</h4>
-              <p>A clean, modern ImGui-based overlay with animated toggles and a tabbed sidebar.</p>
-            </div>
-          </li>
-          <li>
-            <span class="feat-num">03</span>
-            <div class="feat-content">
-              <h4>Modular Architecture</h4>
-              <p>Every feature is its own self-contained module. Easy to extend, easy to maintain.</p>
-            </div>
-          </li>
-          <li>
-            <span class="feat-num">04</span>
-            <div class="feat-content">
-              <h4>Open Source</h4>
-              <p>Built transparently on GitHub. Audit the code, contribute, or fork it yourself.</p>
-            </div>
-          </li>
+    <!-- Navigation -->
+    <nav>
+        <div class="logo">LUMA CLIENT</div>
+        <ul class="nav-links">
+            <li><a href="#features">Features</a></li>
+            <li><a href="#tech">Tech</a></li>
+            <li><a href="#install">Install</a></li>
+            <li><a href="#download">Download</a></li>
         </ul>
-      </div>
-    </div>
-  </div>
-</section>
+    </nav>
 
-<!-- ─── CTA ─── -->
-<section id="cta">
-  <div class="section-inner">
-    <div class="cta-box reveal">
-      <div class="section-label">Get Started</div>
-      <h2 class="section-title">Ready to <span class="accent">Join?</span></h2>
-      <p class="section-desc">Download Luma Client, drop it into your mcpelauncher mods folder, and press K in-game.</p>
-      <div class="cta-actions">
-        <a href="https://github.com/sheep1fy/Luma-Client/releases" target="_blank" rel="noopener" class="btn-primary">
-          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1v10M8 11l-3-3m3 3l3-3M3 14h10" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
-          Download .so
-        </a>
-        <a href="https://github.com/sheep1fy/Luma-Client" target="_blank" rel="noopener" class="btn-ghost">
-          <svg viewBox="0 0 15 15" fill="currentColor"><path d="M7.5 0C3.36 0 0 3.36 0 7.5c0 3.33 2.163 6.16 5.16 7.16.378.07.49-.163.49-.36v-1.25C4.07 13.79 3.68 12.72 3.68 12.72c-.3-.77-.73-.97-.73-.97-.6-.4.045-.4.045-.4.66.046 1.008.678 1.008.678.585.998 1.536.71 1.91.544.06-.42.23-.71.417-.873-1.454-.165-2.98-.726-2.98-3.24 0-.803.27-1.458.71-1.973-.07-.174-.305-.935.07-1.947 0 0 .58-.186 1.9.71.55-.153 1.14-.23 1.73-.23s1.18.077 1.73.23c1.32-.896 1.9-.71 1.9-.71.375 1.012.14 1.773.07 1.947.44.515.71 1.17.71 1.973 0 2.52-1.528 3.073-2.985 3.24.234.2.45.6.45 1.21v1.8c0 .2.11.43.495.355C12.84 13.657 15 10.83 15 7.5 15 3.36 11.64 0 7.5 0z"/></svg>
-          View Source
-        </a>
-      </div>
-    </div>
-  </div>
-</section>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="bg-grid"></div>
+        <div class="floating-blocks">
+            <div class="block"></div>
+            <div class="block"></div>
+            <div class="block"></div>
+            <div class="block"></div>
+            <div class="block"></div>
+        </div>
+        <div class="hero-content">
+            <div class="version-tag">v1.1.0 — BEDROCK 1.21.130.3</div>
+            <h1>
+                ENHANCE YOUR
+                <span class="gradient-text">MINECRAFT</span>
+                EXPERIENCE
+            </h1>
+            <p class="tagline">
+                Advanced client-side modifications for Minecraft Bedrock on Linux.
+                Powerful modules, elegant UI, and version-independent hooking technology.
+            </p>
+            <div class="hero-buttons">
+                <a href="#download" class="btn-primary">Download Now</a>
+                <a href="https://github.com/yourusername/luma-client" class="btn-secondary">View on GitHub</a>
+            </div>
+        </div>
+    </section>
 
-<!-- ─── Footer ─── -->
-<footer>
-  <div class="section-inner">
-    <div class="footer-inner">
-      <a href="#" class="footer-logo">LUMA</a>
-      <ul class="footer-links">
-        <li><a href="https://github.com/sheep1fy/Luma-Client" target="_blank" rel="noopener">GitHub</a></li>
-        <li><a href="#modules">Modules</a></li>
-        <li><a href="#features">Features</a></li>
-      </ul>
-      <span class="footer-copy">© 2025 Luma Client — All Rights Reserved</span>
-    </div>
-  </div>
-</footer>
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <h2 class="fade-in">POWERFUL MODULES</h2>
+        <p class="subtitle fade-in">Everything you need to enhance your gameplay</p>
+        <div class="features-grid">
+            <div class="feature-card fade-in">
+                <span class="feature-icon">📊</span>
+                <h3 class="feature-title">FPS Counter</h3>
+                <p class="feature-description">
+                    Real-time frame rate monitoring with customizable HUD positioning 
+                    and color schemes.
+                </p>
+            </div>
+            <div class="feature-card fade-in">
+                <span class="feature-icon">📍</span>
+                <h3 class="feature-title">Coordinates Display</h3>
+                <p class="feature-description">
+                    Always know where you are with precise XYZ coordinate tracking 
+                    and biome information.
+                </p>
+            </div>
+            <div class="feature-card fade-in">
+                <span class="feature-icon">🖱️</span>
+                <h3 class="feature-title">CPS Counter</h3>
+                <p class="feature-description">
+                    Track your clicks per second for PvP scenarios with detailed 
+                    left/right click statistics.
+                </p>
+            </div>
+            <div class="feature-card fade-in">
+                <span class="feature-icon">⌨️</span>
+                <h3 class="feature-title">Keystrokes</h3>
+                <p class="feature-description">
+                    Visual keystroke display showing WASD, space, and mouse inputs 
+                    for content creation.
+                </p>
+            </div>
+            <div class="feature-card fade-in">
+                <span class="feature-icon">🔍</span>
+                <h3 class="feature-title">Zoom Module</h3>
+                <p class="feature-description">
+                    Smooth zoom functionality with customizable FOV multipliers and 
+                    keybind support.
+                </p>
+            </div>
+            <div class="feature-card fade-in">
+                <span class="feature-icon">🏃</span>
+                <h3 class="feature-title">Auto Sprint</h3>
+                <p class="feature-description">
+                    Automatic sprinting toggle to reduce finger fatigue during long 
+                    gaming sessions.
+                </p>
+            </div>
+            <div class="feature-card fade-in">
+                <span class="feature-icon">📡</span>
+                <h3 class="feature-title">Ping Display</h3>
+                <p class="feature-description">
+                    Real-time server latency monitoring with color-coded indicators 
+                    for connection quality.
+                </p>
+            </div>
+            <div class="feature-card fade-in">
+                <span class="feature-icon">🎨</span>
+                <h3 class="feature-title">Custom HUD</h3>
+                <p class="feature-description">
+                    Fully customizable HUD editor with drag-and-drop positioning 
+                    and live preview.
+                </p>
+            </div>
+            <div class="feature-card fade-in">
+                <span class="feature-icon">⚙️</span>
+                <h3 class="feature-title">ImGui Interface</h3>
+                <p class="feature-description">
+                    Beautiful, responsive GUI powered by Dear ImGui with smooth 
+                    animations and modern design.
+                </p>
+            </div>
+        </div>
+    </section>
 
-<!-- ─── JS ─── -->
-<script>
-// Nav shrink on scroll
-const nav = document.getElementById('nav');
-window.addEventListener('scroll', () => {
-  nav.classList.toggle('scrolled', window.scrollY > 40);
-});
+    <!-- Tech Stack Section -->
+    <section class="tech" id="tech">
+        <h2 class="fade-in">BUILT WITH CUTTING-EDGE TECHNOLOGY</h2>
+        <div class="tech-grid">
+            <div class="tech-item fade-in">
+                <h3 class="tech-name">Dobby Hooking</h3>
+                <p class="tech-desc">Advanced function hooking framework for runtime injection</p>
+            </div>
+            <div class="tech-item fade-in">
+                <h3 class="tech-name">OpenGL ES 2/3</h3>
+                <p class="tech-desc">Version-independent graphics API hooking</p>
+            </div>
+            <div class="tech-item fade-in">
+                <h3 class="tech-name">Dear ImGui</h3>
+                <p class="tech-desc">Immediate mode GUI for overlay rendering</p>
+            </div>
+            <div class="tech-item fade-in">
+                <h3 class="tech-name">C/C++17</h3>
+                <p class="tech-desc">High-performance native code</p>
+            </div>
+            <div class="tech-item fade-in">
+                <h3 class="tech-name">CMake</h3>
+                <p class="tech-desc">Cross-platform build system</p>
+            </div>
+            <div class="tech-item fade-in">
+                <h3 class="tech-name">JNI Bridges</h3>
+                <p class="tech-desc">Native Android integration layer</p>
+            </div>
+        </div>
+    </section>
 
-// Scroll-reveal via IntersectionObserver
-const reveals = document.querySelectorAll('.reveal');
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach((entry, i) => {
-    if (entry.isIntersecting) {
-      // stagger siblings
-      const siblings = entry.target.parentElement.querySelectorAll('.reveal');
-      let idx = 0;
-      siblings.forEach((s, j) => { if (s === entry.target) idx = j; });
-      entry.target.style.transitionDelay = (idx * 0.08) + 's';
-      entry.target.classList.add('visible');
-      observer.unobserve(entry.target);
-    }
-  });
-}, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+    <!-- Installation Section -->
+    <section class="installation" id="install">
+        <h2 class="fade-in">QUICK INSTALLATION</h2>
+        <div class="install-steps">
+            <div class="step fade-in">
+                <div class="step-number">1</div>
+                <h3>Install Dependencies</h3>
+                <p>Make sure you have mcpelauncher-client installed on your Linux system.</p>
+                <div class="code-block">
+                    <span class="code-label">BASH</span>
+                    <code>sudo apt install mcpelauncher-client</code>
+                </div>
+            </div>
 
-reveals.forEach(el => observer.observe(el));
-</script>
+            <div class="step fade-in">
+                <div class="step-number">2</div>
+                <h3>Download Luma Client</h3>
+                <p>Get the latest release from our GitHub repository or build from source.</p>
+                <div class="code-block">
+                    <span class="code-label">BASH</span>
+                    <code>git clone https://github.com/yourusername/luma-client.git<br>cd luma-client</code>
+                </div>
+            </div>
+
+            <div class="step fade-in">
+                <div class="step-number">3</div>
+                <h3>Build the Project</h3>
+                <p>Compile the mod using CMake with your preferred configuration.</p>
+                <div class="code-block">
+                    <span class="code-label">BASH</span>
+                    <code>mkdir build && cd build<br>cmake .. -DCMAKE_BUILD_TYPE=Release<br>make -j$(nproc)</code>
+                </div>
+            </div>
+
+            <div class="step fade-in">
+                <div class="step-number">4</div>
+                <h3>Install the Mod</h3>
+                <p>Copy the compiled library to your mcpelauncher mods directory.</p>
+                <div class="code-block">
+                    <span class="code-label">BASH</span>
+                    <code>cp libluma_client.so ~/.local/share/mcpelauncher/mods/</code>
+                </div>
+            </div>
+
+            <div class="step fade-in">
+                <div class="step-number">5</div>
+                <h3>Launch Minecraft</h3>
+                <p>Start Minecraft Bedrock and press the configured key (default: K) to open the Luma Client menu.</p>
+                <div class="code-block">
+                    <span class="code-label">BASH</span>
+                    <code>mcpelauncher-client</code>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Download Section -->
+    <section class="download" id="download">
+        <div class="download-content fade-in">
+            <h2>READY TO<br>ENHANCE?</h2>
+            <p>
+                Download Luma Client for Minecraft Bedrock on Linux and unlock 
+                powerful features that enhance your gameplay experience.
+            </p>
+            <div style="margin-bottom: 2rem;">
+                <span class="platform-badge">LINUX x86_64</span>
+                <span class="platform-badge">BEDROCK 1.21.30+</span>
+                <span class="platform-badge">OPEN SOURCE</span>
+            </div>
+            <div class="download-buttons">
+                <a href="https://github.com/yourusername/luma-client/releases" class="btn-primary">Download Latest</a>
+                <a href="https://github.com/yourusername/luma-client" class="btn-secondary">View Source Code</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div>© 2026 LUMA CLIENT — OPEN SOURCE PROJECT</div>
+        <div class="footer-links">
+            <a href="https://github.com/yourusername/luma-client">GitHub</a>
+            <a href="https://discord.gg/yourserver">Discord</a>
+            <a href="#install">Documentation</a>
+        </div>
+    </footer>
+
+    <script>
+        // Custom Cursor
+        const cursor = document.querySelector('.cursor');
+        const cursorFollower = document.querySelector('.cursor-follower');
+
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+            
+            setTimeout(() => {
+                cursorFollower.style.left = e.clientX + 'px';
+                cursorFollower.style.top = e.clientY + 'px';
+            }, 100);
+        });
+
+        // Expand cursor on hover
+        const interactiveElements = document.querySelectorAll('a, button, .feature-card, .tech-item');
+        interactiveElements.forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                cursor.style.transform = 'scale(2)';
+            });
+            el.addEventListener('mouseleave', () => {
+                cursor.style.transform = 'scale(1)';
+            });
+        });
+
+        // Scroll animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.fade-in').forEach(el => {
+            observer.observe(el);
+        });
+
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
 </body>
 </html>
